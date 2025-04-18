@@ -1,5 +1,6 @@
 __pycache__
 AFY/
 downloads/
-app.py
+bapp.py
 backup.py
+.env
