@@ -1,4 +1,4 @@
-# Video and Audio Downloader API
+# Fastapi-Youtube-Downloader
 
 This is a **FastAPI** based web application that allows users to download videos and audio from platforms like **YouTube**. The API supports various formats (MP4, MKV, MP3, WebM) and qualities (360p, 480p, 720p, 1080p, 4K). Additionally, the API can fetch metadata for videos without downloading them.
 
@@ -191,4 +191,4 @@ Feel free to fork this project, make changes, and create a pull request with you
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-# YoutubeFastapiDownloader
+# Fastapi-Youtube-Downloader
