@@ -44,7 +44,7 @@ This is a **FastAPI** based web application that allows users to download videos
 2. **Run the Celery worker**:
 
    ```bash
-   celery -A app.tasks.worker.celery worker --loglevel=info
+   celery -A app.worker.download_task.celery worker --loglevel=info
    ```
 
 3. **Run the FastAPI application**:
