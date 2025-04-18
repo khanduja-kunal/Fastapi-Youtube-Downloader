@@ -11,6 +11,8 @@ This is a **FastAPI** based web application that allows users to download videos
 - **Metadata Fetching**: Users can get metadata for a video, such as title, duration, views, etc.
 - **Automatic Fallback**: If a download fails using `yt-dlp`, the system will fall back to `pytube` for the download.
 - **Retry Logic**: The application retries downloading up to 3 times if there’s an error with the download process.
+- **Asynchronous Task Processing**: Uses Celery with Redis broker to handle background download tasks.
+- **Download History Tracking**: Stores each download attempt with status and timestamp in a database.
 
 ---
 
@@ -25,8 +27,6 @@ This is a **FastAPI** based web application that allows users to download videos
 
 2. **Install the required dependencies**:
 
-   You can use **`pip`** to install the necessary dependencies from the `requirements.txt` file.
-
    ```bash
    pip install -r requirements.txt
    ```
@@ -35,61 +35,73 @@ This is a **FastAPI** based web application that allows users to download videos
 
 ## Usage
 
-1. **Run the API**:
-
-   Use **Uvicorn** to run the FastAPI application:
+1. **Start Redis Server**:
 
    ```bash
-   uvicorn main:app --reload
+   redis-server
+   ```
+
+2. **Run the Celery worker**:
+
+   ```bash
+   celery -A app.tasks.worker.celery worker --loglevel=info
+   ```
+
+3. **Run the FastAPI application**:
+
+   ```bash
+   uvicorn app.main:app --reload
    ```
 
    The API will be available at `http://127.0.0.1:8000`.
 
-2. **Available Endpoints**:
+4. **Available Endpoints**:
 
    ### `POST /download/`
 
-   This endpoint allows users to download videos or audio.
+   Initiate a video or audio download task.
 
    **Request Body**:
    ```json
    {
      "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-     "format": "mp4",   // Default is "mp4"
-     "quality": "720p"   // Default is "720p"
+     "format": "mp4",
+     "quality": "720p"
    }
    ```
 
    **Response**:
    ```json
    {
-     "status": "success",
      "message": "Download started",
-     "file_name": "file_1632948372.mp4"
+     "task_id": "7c8a7b4e-f122-4c26-85d9-abcde1234567"
    }
    ```
-
-   If the download fails, an error response will be returned.
 
    ### `GET /metadata`
 
-   This endpoint allows users to fetch metadata for a given video URL.
+   Fetch metadata for a given video URL.
 
    **Query Parameters**:
-   - `url` (required): The URL of the video (e.g., YouTube video URL).
+   - `url`: Required, the URL of the video.
 
    **Response**:
    ```json
    {
-     "title": "Video Title",
-     "duration": "120",
-     "channel": "Channel Name",
-     "thumbnail": "https://link/to/thumbnail.jpg",
-     "published_date": "2022-01-01",
-     "views": 123456,
-     "likes": 1000
+     "title": "WILD WORLD DOLBY VISION™ | EXTREME COLORS [8K HDR]",
+     "duration": 2684,
+     "channel": "8K Paradise",
+     "thumbnail": "https://i.ytimg.com/vi_webp/Rwe5Aw3KPHY/maxresdefault.webp",
+     "published_date": "20231229",
+     "views": 25893772,
+     "likes": 101469,
+     "size": 16560874749
    }
    ```
+
+   ### `GET /history`
+
+   Fetch history/logs from the database.
 
 ---
 
@@ -121,22 +133,50 @@ curl -X 'GET' \
 - **yt-dlp**: A powerful command-line tool for downloading videos from YouTube and other sites.
 - **pytube**: A lightweight Python library for downloading YouTube content.
 - **uvicorn**: ASGI server for running FastAPI apps.
+- **Celery**: Task queue for asynchronous background task processing.
+- **Redis**: Message broker for Celery.
+- **SQLAlchemy**: ORM for database interactions.
 
 ---
 
 ## Directory Structure
 
 ```
-video-audio-downloader-api/
-│
-├── main.py                  # FastAPI application (routes and logic)
-├── routes.py                # Implementation of Routes
-├── schemas.py               # Pydantic models for request body
-├── services.py              # Core functionality for APIs
-├── utils.py                 # Utility function for downloads directory
-├── requirements.txt         # Python dependencies
-├── downloads/               # Directory where downloaded files will be saved
-└── README.md                # Project documentation (this file)
+Fastapi_Youtube_Downloader/
+├── app/                       # FastAPI application code
+│   ├── api/                   # API endpoint handlers
+│   │   ├── __init__.py
+│   │   ├── download.py
+│   │   ├── history.py
+│   │   └── metadata.py
+│   ├── core/                  # Core configuration and security
+│   │   ├── __init__.py
+│   │   ├── config.py
+│   │   ├── rate_limit.py
+│   │   ├── redis_client.py
+│   │   └── security.py
+│   ├── db/                    # Database models and setup
+│   │   ├── __init__.py
+│   │   ├── init_db.py
+│   │   ├── session.py
+│   │   └── models.py
+│   ├── services/              # Business logic
+│   │   ├── __init__.py
+│   │   ├── downloader.py
+│   ├── worker/                # Background tasks with Celery
+│   │   ├── __init__.py
+│   │   └── download_task.py
+│   ├── utils/                 # Helper functions
+│   │   ├── __init__.py
+│   │   └── validation.py
+│   ├── __init__.py
+│   └── main.py                # Entry point for FastAPI app
+├── downloads/                 # Stores downloaded files
+├── AFY/                       # Virtual environment (ignored in VCS)
+├── .env                       # Environment configuration
+├── .gitignore                 # Git ignore rules
+├── requirements.txt           # Python dependencies
+└── README.md                  # Project documentation
 ```
 
 ---
@@ -151,8 +191,4 @@ Feel free to fork this project, make changes, and create a pull request with you
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-```
-
----
-
-This is the full content for your `README.md` file. It explains the purpose of the project, installation instructions, how to use it, and gives details about the available endpoints.
+# YoutubeFastapiDownloader
