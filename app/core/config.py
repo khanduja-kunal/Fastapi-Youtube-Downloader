@@ -27,7 +27,10 @@ REDIS_PORT=int(os.getenv("REDIS_PORT"))
 #CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
 CELERY_BROKER_URL = (f"redis://{REDIS_HOST}:{REDIS_PORT}/0")
 
-API_KEY=os.getenv("API_KEY")
+#API_KEY=os.getenv("API_KEY")
+SECRET_KEY = os.getenv("SECRET_KEY", "supersecretkey")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
 
 MAX_DOWNLOADS_PER_DAY=int(os.getenv("MAX_DOWNLOADS_PER_DAY"))
 MAX_VIDEO_SIZE=int(os.getenv("MAX_VIDEO_SIZE"))  

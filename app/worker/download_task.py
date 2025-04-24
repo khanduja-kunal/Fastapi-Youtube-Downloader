@@ -20,7 +20,7 @@ os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
 # Celery Task to download video
 @celery.task(bind=True)
-def download_video_task(self, url: str, format: str, quality: str):
+def download_video_task(self, url: str, format: str, quality: str, user_id: int):
     retries = 0
     max_retries = 3
     last_error = None
@@ -54,20 +54,21 @@ def download_video_task(self, url: str, format: str, quality: str):
                     url=url,
                     status="Failed",
                     downloaded_at=datetime.utcnow(),
-                    filename=""
+                    filename="",
+                    user_id=user_id
                 )
                 session.add(history)
                 session.commit()
             return {"status": "failed", "error": str(fallback_error)}
 
-    # Only one DB write for success
     if download_success:
         with Session(engine) as session:
             history = DownloadHistory(
                 url=url,
                 status="Completed",
                 downloaded_at=datetime.utcnow(),
-                filename=filename
+                filename=filename,
+                user_id=user_id
             )
             session.add(history)
             session.commit()

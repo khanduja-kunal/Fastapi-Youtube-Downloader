@@ -1,8 +1,9 @@
 # app/db/models.py
-from sqlmodel import SQLModel, Field
-from pydantic import BaseModel
+from sqlmodel import SQLModel, Field, Relationship
+from sqlalchemy import Column, Boolean, text
+from pydantic import BaseModel, EmailStr
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 # Download History Model for the database
 class DownloadHistory(SQLModel, table=True):
@@ -11,6 +12,16 @@ class DownloadHistory(SQLModel, table=True):
     status: str
     downloaded_at: datetime
     filename: str
+    user_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    user: Optional["User"] = Relationship(back_populates="downloads") 
+
+class User(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    email: str = Field(unique=True, index=True)
+    hashed_password: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    is_admin: bool = Field(default=False, sa_column=Column(Boolean, server_default=text("false")))
+    downloads: List[DownloadHistory] = Relationship(back_populates="user")
 
 # Pydantic schema for responses (optional in API)
 class DownloadHistoryResponse(BaseModel):
@@ -32,3 +43,16 @@ class DownloadRequest(BaseModel):
 class TaskStatusResponse(BaseModel):
     status: str
     result: Optional[dict]
+
+class UserCreate(BaseModel):
+    email: EmailStr
+    password: str
+    is_admin: bool = False
+
+class UserRead(BaseModel):
+    id: int
+    email: EmailStr
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
